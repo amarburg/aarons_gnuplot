@@ -8,9 +8,9 @@ Gem::Specification.new do |gem|
   gem.version       = AaronsGnuplot::VERSION
   gem.authors       = ["Aaron Marburg"]
   gem.email         = ["amarburg@notetofutureself.org"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
-  gem.homepage      = ""
+  gem.description   = %q{Some of my personal tools for simplifying Gnuplot in Ruby}
+  gem.summary       = %q{Some of my personal tools for simplifying Gnuplot in Ruby}
+  gem.homepage      = "http://github.com/amarburg/aarons_gnuplot"
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
