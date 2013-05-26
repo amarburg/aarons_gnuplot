@@ -21,11 +21,11 @@ module Gnuplot
       end
 
       def output_dir
-        @output_dir || "/tmp"
+        @output_dir || Pathname.new("/tmp")
       end
 
       def output_dir=(s)
-        @output_dir = s
+        @output_dir = Pathname.new(s)
       end
 
       def timestamp_titles?; @timestamp_titles; end
@@ -36,7 +36,7 @@ module Gnuplot
     def self.to_file( gp, file, &blk )
 
       file += ".#{Plot.format}" unless File::extname( file ).length > 0
-      file = Plot.output_dir + "/" + file unless file.match "/"
+      file = Plot.output_dir.join(file).to_s unless file.match "/"
 
       Gnuplot::Plot.new(gp) do |plot|
 
