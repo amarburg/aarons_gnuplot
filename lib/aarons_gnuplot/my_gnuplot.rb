@@ -1,19 +1,30 @@
 require 'gnuplot'
+require_relative 'formats'
 
 module Gnuplot
 
-  def self.do_plot( filename, &blk )
-    Gnuplot.open do |gp|
-      Gnuplot::Plot.to_file( gp, filename ) do |plot|
-        blk.call plot
+  def self.do_plot( filename, format = nil, &blk )
+      Gnuplot.open do |gp|
+         plot = Gnuplot::Plot.to_file( gp, filename, format ) do |plot|
+                     blk.call plot
+                   end
+
+         if format.save_gnuplot?
+           filename = plot["output"].gsub(/"/,'') + ".gnuplot"
+           puts "Wrote gnuplot to #{filename}"
+           File.open( filename, "w" ) { |io|
+             io << plot.to_gplot
+             io << plot.store_datasets
+           }
+         end
       end
-    end
   end
 
   class Plot
+
     class <<self
       def format
-        @format || "jpg"
+        @format || SVG.new
       end
 
       def format=(s)
@@ -33,14 +44,15 @@ module Gnuplot
 
     end
 
-    def self.to_file( gp, file, &blk )
+    def self.to_file( gp, file, format = nil, &blk )
+      format ||= Plot::format
 
-      file += ".#{Plot.format}" unless File::extname( file ).length > 0
+      file += ".#{format.extension}" unless File::extname( file ).length > 0
       file = Plot.output_dir.join(file).to_s unless file.match "/"
 
       Gnuplot::Plot.new(gp) do |plot|
 
-        plot.terminal "#{format} size 1280,1024"
+        plot.terminal format.terminal
         outfile = file
         raise "Output dir \"#{File.dirname(outfile)}\" doesn't exist" unless File.directory? File.dirname( outfile )
         File::open(outfile, "w" ) {}
