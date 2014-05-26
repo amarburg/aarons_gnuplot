@@ -51,6 +51,23 @@ module Gnuplot
         'svg'
       end
     end
+
+    module CairoLatex
+      class Pdf < Format
+        def initialize( options = "", opts = {} )
+          super opts
+          @options = options
+        end
+
+        def terminal
+          "cairolatex pdf #{@options}"
+        end
+
+        def extension
+          "tex"
+        end
+      end
+    end
   end
 end
 
