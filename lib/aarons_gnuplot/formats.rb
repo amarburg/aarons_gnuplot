@@ -2,17 +2,28 @@
 
 module Gnuplot
 
-  class Plot
+  module Formats
 
     class Format
-      attr_writer :save_gnuplot
       def initialize( opts = {} )
-        @save_gnuplot = opts[:save_gnuplot] || false
       end
 
-      def save_gnuplot?
-        @save_gnuplot
+      def preamble( plot, outfile )
+        plot.terminal terminal
+        plot.output outfile.to_s
       end
+    end
+
+    class Gnuplot < Format
+
+      def initialize( opts = {} )
+        super
+      end
+
+      def preamble( plot, outfile )
+      end
+
+      def extension; 'gnuplot'; end
     end
 
     class Postscript < Format

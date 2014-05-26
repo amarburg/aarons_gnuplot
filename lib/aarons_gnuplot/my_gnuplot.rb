@@ -4,27 +4,29 @@ require_relative 'formats'
 module Gnuplot
 
   def self.do_plot( filename, format = nil, &blk )
-      Gnuplot.open do |gp|
-         plot = Gnuplot::Plot.to_file( gp, filename, format ) do |plot|
-                     blk.call plot
-                   end
 
-         if format.save_gnuplot?
-           filename = plot["output"].gsub(/"/,'') + ".gnuplot"
-           puts "Wrote gnuplot to #{filename}"
-           File.open( filename, "w" ) { |io|
-             io << plot.to_gplot
-             io << plot.store_datasets
-           }
-         end
+    outfile = Gnuplot::Plot::check_filename( filename, format )
+    puts "Writing #{format.class.to_s.split('::').last} to #{outfile}"
+
+    case format
+    when Formats::Gnuplot
+      File.open( outfile, "w" ) do |io|
+        Gnuplot::Plot.to_file( io, outfile, format, &blk )
+      end 
+    else
+      Gnuplot.open do |gp|
+        Gnuplot::Plot.to_file( gp, outfile, format, &blk )
       end
+    end
   end
 
   class Plot
 
+    include Formats
+
     class <<self
       def format
-        @format || SVG.new
+        @format || Formats::SVG.new
       end
 
       def format=(s)
@@ -42,22 +44,22 @@ module Gnuplot
       def timestamp_titles?; @timestamp_titles; end
       def timestamp_titles=(s); @timestamp_titles=s; end
 
+      def check_filename( filename, format = Plot::format )
+        filename = Pathname.new( filename )
+        filename = filename.sub_ext(".#{format.extension}") unless filename.extname.length > 0
+        outfile = filename.to_s.match("/") ? filename : Plot.output_dir.join(filename).to_s 
+        raise "Output dir \"#{outfile.dirname}\" doesn't exist" unless outfile.dirname.directory?
+        outfile
+      end
     end
 
-    def self.to_file( gp, file, format = nil, &blk )
+    def self.to_file( io, filename, format = nil, &blk )
       format ||= Plot::format
+      outfile = check_filename( filename, format )
 
-      file += ".#{format.extension}" unless File::extname( file ).length > 0
-      file = Plot.output_dir.join(file).to_s unless file.match "/"
+      Gnuplot::Plot.new(io) do |plot|
 
-      Gnuplot::Plot.new(gp) do |plot|
-
-        plot.terminal format.terminal
-        outfile = file
-        raise "Output dir \"#{File.dirname(outfile)}\" doesn't exist" unless File.directory? File.dirname( outfile )
-        File::open(outfile, "w" ) {}
-        plot.output outfile
-
+        format.preamble( plot, outfile )
         blk.call( plot )
 
       end
